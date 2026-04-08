@@ -3,6 +3,11 @@ set -e
 
 OS="$(uname -s)"
 
+# Auto-escalate to root on Linux if needed
+if [ "$OS" = "Linux" ] && [ "$(id -u)" -ne 0 ]; then
+  exec sudo bash "$0" "$@"
+fi
+
 echo "Installing portview..."
 
 if [ "$OS" = "Darwin" ]; then
