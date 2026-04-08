@@ -172,13 +172,13 @@
   <table>
     <thead>
       <tr>
-        <th data-col="port" class="sorted">Port</th>
-        <th data-col="proto">Protocol</th>
+        <th data-col="port" class="sorted" style="width:5%">Port</th>
+        <th data-col="proto" style="width:6%">Protocol</th>
         <th data-col="command">Command</th>
-        <th data-col="pid">PID</th>
-        <th data-col="user">User</th>
-        <th data-col="address">Address</th>
-        <th data-col="count">Count</th>
+        <th data-col="pid" style="width:6%">PID</th>
+        <th data-col="user" style="width:10%">User</th>
+        <th data-col="address" style="width:8%">Address</th>
+        <th data-col="count" style="width:5%">Count</th>
       </tr>
     </thead>
     <tbody id="tableBody">
@@ -311,9 +311,10 @@
     handle.className = 'resize-handle';
     th.appendChild(handle);
 
-    var startX, startW;
+    var startX, startW, resizing = false;
     handle.addEventListener('mousedown', function(e) {
       e.stopPropagation();
+      resizing = true;
       startX = e.pageX;
       startW = th.offsetWidth;
       handle.classList.add('active');
@@ -325,9 +326,13 @@
         handle.classList.remove('active');
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
+        setTimeout(function() { resizing = false; }, 0);
       }
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
+    });
+    th.addEventListener('click', function(e) {
+      if (resizing) e.stopImmediatePropagation();
     });
   });
 
