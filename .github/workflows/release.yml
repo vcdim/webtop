@@ -30,9 +30,10 @@ jobs:
 
       - name: Publish APT repo
         run: |
-          # Collect .deb files from GoReleaser dist
+          # Collect .deb files and install script
           mkdir -p apt-repo
           cp dist/*.deb apt-repo/ 2>/dev/null || true
+          cp install.sh apt-repo/
 
           # Generate APT metadata
           cd apt-repo
@@ -50,7 +51,6 @@ jobs:
           git checkout --orphan gh-pages-tmp
           git rm -rf .
           cp -r apt-repo/* .
-          cp $GITHUB_WORKSPACE/install.sh . 2>/dev/null || true
           git add *.deb Packages Packages.gz Release install.sh
           git commit -m "Update APT repo for ${GITHUB_REF_NAME}"
           git push origin HEAD:gh-pages --force
