@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+if [ "$(id -u)" -ne 0 ]; then
+  exec sudo bash "$0" "$@"
+fi
+
 echo "Uninstalling portview..."
 
 # Stop and disable service if running
