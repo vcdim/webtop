@@ -5,21 +5,21 @@
 class Portview < Formula
   desc "Lightweight web-based port monitor"
   homepage "https://github.com/vcdim/portview"
-  version "0.3.1"
+  version "0.3.2"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/vcdim/portview/releases/download/v0.3.1/portview_0.3.1_darwin_amd64.tar.gz"
-      sha256 "07b75bd44d1398b2a2ba7893e7d59bb66cafc176ca1643d6acf10783927ab0a7"
+      url "https://github.com/vcdim/portview/releases/download/v0.3.2/portview_0.3.2_darwin_amd64.tar.gz"
+      sha256 "0f1715c708cde08c7349cfb4fbc17979b630cd4728d91928337403f1267ad6c3"
 
       define_method(:install) do
         bin.install "portview"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/vcdim/portview/releases/download/v0.3.1/portview_0.3.1_darwin_arm64.tar.gz"
-      sha256 "a4b791e9588b0d14b322ad753410372bc4c3d37b0f7aa4e4febfa4c3d41cd293"
+      url "https://github.com/vcdim/portview/releases/download/v0.3.2/portview_0.3.2_darwin_arm64.tar.gz"
+      sha256 "788ec90a3c1c43b63252aaed3b03cb42d23fc1dd2bc62a0e1b7877a124523876"
 
       define_method(:install) do
         bin.install "portview"
@@ -29,15 +29,15 @@ class Portview < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/vcdim/portview/releases/download/v0.3.1/portview_0.3.1_linux_amd64.tar.gz"
-      sha256 "dcfa089e935a7e8b0dc8f304d99d99d51cba27ef5ac874cbcc2920b823332d15"
+      url "https://github.com/vcdim/portview/releases/download/v0.3.2/portview_0.3.2_linux_amd64.tar.gz"
+      sha256 "85b1e5d638c8453e3ebbcaebad9e2db113aa20dc0d0500092c63929701a2560f"
       define_method(:install) do
         bin.install "portview"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/vcdim/portview/releases/download/v0.3.1/portview_0.3.1_linux_arm64.tar.gz"
-      sha256 "96287572711d9fe9c7cfe40c686fcda60bc40cffb864481899ba0ecc32304a6d"
+      url "https://github.com/vcdim/portview/releases/download/v0.3.2/portview_0.3.2_linux_arm64.tar.gz"
+      sha256 "51720622bddae0a48a43154804ffeae7e87a27ffc4a3978d369d6afc8c4f84db"
       define_method(:install) do
         bin.install "portview"
       end
