@@ -48,7 +48,7 @@ sudo dpkg -i portview_0.1.1_linux_amd64.deb
 sudo portview
 ```
 
-Open http://localhost:8080 in your browser.
+Open http://localhost:9999 in your browser.
 
 ## Options
 
@@ -58,8 +58,8 @@ Open http://localhost:8080 in your browser.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-port` | `8080` | HTTP listen port |
-| `-interval` | `2s` | Data refresh interval |
+| `-port`, `-p` | `9999` | HTTP listen port |
+| `-interval`, `-i` | `2s` | Data refresh interval |
 
 ## Build from Source
 
