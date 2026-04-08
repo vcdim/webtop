@@ -2,6 +2,8 @@
 
 Lightweight, single-binary web-based port monitor. Real-time port → process → PID → user mappings in your browser.
 
+![screenshot](assets/screenshot.png)
+
 ## Install
 
 ```

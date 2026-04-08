@@ -54,10 +54,12 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	s.clients[conn] = struct{}{}
 	s.mu.Unlock()
 
-	// Send initial snapshot
-	s.sendSnapshot(conn)
+	// Send initial data immediately
+	if data := s.collectJSON(); data != nil {
+		conn.WriteMessage(websocket.TextMessage, data)
+	}
 
-	// Keep connection alive; remove on close
+	// Read loop keeps connection alive; clean up on disconnect
 	for {
 		if _, _, err := conn.ReadMessage(); err != nil {
 			s.mu.Lock()
@@ -88,13 +90,6 @@ func (s *Server) broadcastLoop() {
 	}
 }
 
-func (s *Server) sendSnapshot(conn *websocket.Conn) {
-	data := s.collectJSON()
-	if data != nil {
-		conn.WriteMessage(websocket.TextMessage, data)
-	}
-}
-
 func (s *Server) collectJSON() []byte {
 	entries, err := collector.Collect()
 	if err != nil {
@@ -103,7 +98,6 @@ func (s *Server) collectJSON() []byte {
 	}
 	data, err := json.Marshal(entries)
 	if err != nil {
-		log.Printf("json marshal error: %v", err)
 		return nil
 	}
 	return data
