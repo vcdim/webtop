@@ -3,9 +3,10 @@ set -e
 
 OS="$(uname -s)"
 
-# Auto-escalate to root on Linux if needed
+# Check root on Linux
 if [ "$OS" = "Linux" ] && [ "$(id -u)" -ne 0 ]; then
-  exec curl -fsSL https://vcdim.github.io/portview/install.sh | sudo bash
+  echo "Error: root required. Run: curl -fsSL https://vcdim.github.io/portview/install.sh | sudo bash"
+  exit 1
 fi
 
 echo "Installing portview..."

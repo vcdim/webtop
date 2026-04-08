@@ -2,7 +2,8 @@
 set -e
 
 if [ "$(id -u)" -ne 0 ]; then
-  exec curl -fsSL https://vcdim.github.io/portview/uninstall.sh | sudo bash
+  echo "Error: root required. Run: curl -fsSL https://vcdim.github.io/portview/uninstall.sh | sudo bash"
+  exit 1
 fi
 
 echo "Uninstalling portview..."
