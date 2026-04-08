@@ -33,7 +33,7 @@ jobs:
           # Collect .deb files and install script
           mkdir -p apt-repo
           cp dist/*.deb apt-repo/ 2>/dev/null || true
-          cp install.sh apt-repo/
+          cp install.sh uninstall.sh apt-repo/
 
           # Generate APT metadata
           cd apt-repo
@@ -51,6 +51,6 @@ jobs:
           git checkout --orphan gh-pages-tmp
           git rm -rf .
           cp -r apt-repo/* .
-          git add *.deb Packages Packages.gz Release install.sh
+          git add *.deb Packages Packages.gz Release install.sh uninstall.sh
           git commit -m "Update APT repo for ${GITHUB_REF_NAME}"
           git push origin HEAD:gh-pages --force
