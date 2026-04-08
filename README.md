@@ -16,7 +16,13 @@ See real-time port → process → PID → user mappings in your browser.
 
 ## Install
 
-### APT (Debian/Ubuntu)
+### One-liner (Debian/Ubuntu)
+
+```
+curl -fsSL https://vcdim.github.io/portview/install.sh | sudo bash
+```
+
+### APT (manual)
 
 ```
 echo "deb [trusted=yes] https://vcdim.github.io/portview/ /" | sudo tee /etc/apt/sources.list.d/portview.list
