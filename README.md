@@ -14,10 +14,32 @@ See real-time port → process → PID → user mappings in your browser.
 - **Single binary** — Zero runtime dependencies, just run and open browser
 - **Lightweight** — Uses `ss` and `/proc` for data collection
 
+## Install
+
+### APT (Debian/Ubuntu)
+
+```
+echo "deb [trusted=yes] https://vcdim.github.io/portview/ /" | sudo tee /etc/apt/sources.list.d/portview.list
+```
+
+```
+sudo apt update && sudo apt install portview
+```
+
+### Download .deb manually
+
+```
+curl -LO https://github.com/vcdim/portview/releases/latest/download/portview_0.1.1_linux_amd64.deb
+```
+
+```
+sudo dpkg -i portview_0.1.1_linux_amd64.deb
+```
+
 ## Quick Start
 
 ```
-./portview
+sudo portview
 ```
 
 Open http://localhost:8080 in your browser.
