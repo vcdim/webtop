@@ -1,0 +1,12 @@
+[Unit]
+Description=portview - lightweight web-based port monitor
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/portview -port 8080
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

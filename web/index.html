@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>portview</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+  .status-dot.connected { background: var(--green); }
+  .search-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--text);
+    font-size: 14px;
+    width: 240px;
+    outline: none;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--text-dim); }
+  main { padding: 16px 24px; }
+  .stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .stats strong { color: var(--text); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    table-layout: fixed;
+  }
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+  }
+  .resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+  }
+  .resize-handle:hover,
+  .resize-handle.active {
+    background: var(--accent);
+  }
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: var(--surface); }
+  td {
+    padding: 8px 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .proto {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .proto-tcp { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+  .proto-udp { background: rgba(210, 153, 34, 0.15); color: var(--yellow); }
+  .count-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(63, 185, 80, 0.15);
+    color: var(--green);
+  }
+  .empty-state {
+    text-align: center;
+    padding: 60px 0;
+    color: var(--text-dim);
+  }
+  .empty-state p { font-size: 15px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">port<span>view</span></div>
+  <div class="header-right">
+    <div class="status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Connecting...</span>
+    </div>
+    <input type="text" class="search-box" id="search" placeholder="Filter ports, processes...">
+  </div>
+</header>
+<main>
+  <div class="stats">
+    <span><strong id="totalPorts">0</strong> ports</span>
+    <span><strong id="totalProcesses">0</strong> processes</span>
+    <span>Updated: <strong id="lastUpdate">—</strong></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th data-col="port" class="sorted">Port</th>
+        <th data-col="proto">Protocol</th>
+        <th data-col="command">Command</th>
+        <th data-col="pid">PID</th>
+        <th data-col="user">User</th>
+        <th data-col="address">Address</th>
+        <th data-col="state">State</th>
+        <th data-col="count">Count</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <tr><td colspan="8" class="empty-state"><p>Waiting for data...</p></td></tr>
+    </tbody>
+  </table>
+</main>
+
+<script>
+(function() {
+  let entries = [];
+  let sortCol = 'port';
+  let sortAsc = true;
+  let ws;
+  let reconnectDelay = 1000;
+
+  const tbody = document.getElementById('tableBody');
+  const search = document.getElementById('search');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  function connect() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(proto + '//' + location.host + '/ws');
+
+    ws.onopen = function() {
+      statusDot.classList.add('connected');
+      statusText.textContent = 'Connected';
+      reconnectDelay = 1000;
+    };
+
+    ws.onmessage = function(e) {
+      try {
+        entries = JSON.parse(e.data) || [];
+        render();
+      } catch(err) {
+        console.error('parse error:', err);
+      }
+    };
+
+    ws.onclose = function() {
+      statusDot.classList.remove('connected');
+      statusText.textContent = 'Reconnecting...';
+      setTimeout(connect, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+    };
+
+    ws.onerror = function() {
+      ws.close();
+    };
+  }
+
+  function render() {
+    const filter = search.value.toLowerCase();
+    let filtered = entries;
+    if (filter) {
+      filtered = entries.filter(function(e) {
+        return (
+          String(e.port).includes(filter) ||
+          e.proto.toLowerCase().includes(filter) ||
+          (e.command || '').toLowerCase().includes(filter) ||
+          String(e.pid).includes(filter) ||
+          (e.user || '').toLowerCase().includes(filter) ||
+          (e.address || '').toLowerCase().includes(filter) ||
+          (e.state || '').toLowerCase().includes(filter)
+        );
+      });
+    }
+
+    // Sort
+    filtered.sort(function(a, b) {
+      let va = a[sortCol], vb = b[sortCol];
+      if (typeof va === 'string') va = va.toLowerCase();
+      if (typeof vb === 'string') vb = vb.toLowerCase();
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ? 1 : -1;
+      return 0;
+    });
+
+    // Update stats
+    const ports = new Set(entries.map(function(e) { return e.port; }));
+    const procs = new Set(entries.filter(function(e) { return e.process; }).map(function(e) { return e.process; }));
+    document.getElementById('totalPorts').textContent = ports.size;
+    document.getElementById('totalProcesses').textContent = procs.size;
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>' +
+        (entries.length ? 'No matches' : 'No listening ports') + '</p></td></tr>';
+      return;
+    }
+
+    let html = '';
+    for (let i = 0; i < filtered.length; i++) {
+      const e = filtered[i];
+      const protoClass = e.proto === 'tcp' ? 'proto-tcp' : 'proto-udp';
+      html += '<tr>' +
+        '<td>' + e.port + '</td>' +
+        '<td><span class="proto ' + protoClass + '">' + e.proto + '</span></td>' +
+        '<td title="' + (e.command || '').replace(/"/g, '&quot;') + '">' + (e.command || '—') + '</td>' +
+        '<td>' + (e.pid || '—') + '</td>' +
+        '<td>' + (e.user || '—') + '</td>' +
+        '<td>' + (e.address || '—') + '</td>' +
+        '<td>' + (e.state || '—') + '</td>' +
+        '<td>' + (e.count > 1 ? '<span class="count-badge">&times;' + e.count + '</span>' : '1') + '</td>' +
+        '</tr>';
+    }
+    tbody.innerHTML = html;
+  }
+
+  // Column sorting
+  document.querySelectorAll('thead th').forEach(function(th) {
+    th.addEventListener('click', function() {
+      const col = th.dataset.col;
+      if (sortCol === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortCol = col;
+        sortAsc = true;
+      }
+      document.querySelectorAll('thead th').forEach(function(t) { t.classList.remove('sorted'); });
+      th.classList.add('sorted');
+      render();
+    });
+  });
+
+  search.addEventListener('input', render);
+
+  // Column resizing
+  document.querySelectorAll('thead th').forEach(function(th) {
+    var handle = document.createElement('div');
+    handle.className = 'resize-handle';
+    th.appendChild(handle);
+
+    var startX, startW;
+    handle.addEventListener('mousedown', function(e) {
+      e.stopPropagation();
+      startX = e.pageX;
+      startW = th.offsetWidth;
+      handle.classList.add('active');
+
+      function onMove(e) {
+        th.style.width = (startW + e.pageX - startX) + 'px';
+      }
+      function onUp() {
+        handle.classList.remove('active');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+
+  connect();
+})();
+</script>
+</body>
+</html>
