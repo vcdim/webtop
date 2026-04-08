@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/user"
 	"regexp"
 	"runtime"
 	"sort"
@@ -181,20 +180,10 @@ func lookupUser(pid int) string {
 	if pid <= 0 {
 		return ""
 	}
-	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/status", pid))
-	if err != nil {
-		return ""
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(line, "Uid:") {
-			fields := strings.Fields(line)
-			if len(fields) >= 2 {
-				if u, err := user.LookupId(fields[1]); err == nil {
-					return u.Username
-				}
-				return fields[1]
-			}
-		}
+	// stat -c "%U" resolves via NSS (supports LDAP/NIS)
+	out, err := exec.Command("stat", "-c", "%U", fmt.Sprintf("/proc/%d", pid)).Output()
+	if err == nil {
+		return strings.TrimSpace(string(out))
 	}
 	return ""
 }
