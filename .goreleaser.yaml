@@ -32,7 +32,9 @@ nfpms:
     contents:
       - src: webtop.service
         dst: /etc/systemd/system/webtop.service
-        type: config
+    scripts:
+      postinstall: scripts/postinstall.sh
+      preremove: scripts/preremove.sh
 
 brews:
   - repository:
