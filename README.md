@@ -8,25 +8,27 @@ Lightweight, single-binary web-based system dashboard. Real-time port monitoring
 ## Install
 
 ```
-curl -fsSL https://vcdim.github.io/webtop/install.sh | bash
+curl -fsSL https://vcdim.github.io/webtop/install.sh | sudo bash
 ```
+
+The service starts automatically after install. Open http://localhost:9999.
 
 ## Usage
 
-```
-sudo webtop
-```
-
-Open http://localhost:9999. Use `-p` to change port, `-i` to change refresh interval:
+Use `-p` to change port, `-i` to change refresh interval:
 
 ```
 sudo webtop -p 8080 -i 5s
 ```
 
-Or run as a systemd service:
+Manage the service:
 
 ```
-sudo systemctl enable --now webtop
+sudo systemctl restart webtop
+```
+
+```
+sudo systemctl stop webtop
 ```
 
 ## Uninstall
