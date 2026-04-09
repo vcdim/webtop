@@ -9,11 +9,16 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/vcdim/portview/internal/collector"
+	"github.com/vcdim/webtop/internal/collector"
 )
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+type message struct {
+	Type string      `json:"type"`
+	Data interface{} `json:"data"`
 }
 
 type Server struct {
@@ -39,7 +44,7 @@ func (s *Server) Start() error {
 
 	go s.broadcastLoop()
 
-	log.Printf("portview listening on %s", s.addr)
+	log.Printf("webtop listening on %s", s.addr)
 	return http.ListenAndServe(s.addr, nil)
 }
 
@@ -55,9 +60,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 
 	// Send initial data immediately
-	if data := s.collectJSON(); data != nil {
-		conn.WriteMessage(websocket.TextMessage, data)
-	}
+	s.sendAll(conn)
 
 	// Read loop keeps connection alive; clean up on disconnect
 	for {
@@ -75,30 +78,46 @@ func (s *Server) broadcastLoop() {
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 	for range ticker.C {
-		data := s.collectJSON()
-		if data == nil {
-			continue
-		}
+		msgs := s.collectAll()
 		s.mu.Lock()
 		for conn := range s.clients {
-			if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
-				conn.Close()
-				delete(s.clients, conn)
+			for _, data := range msgs {
+				if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+					conn.Close()
+					delete(s.clients, conn)
+					break
+				}
 			}
 		}
 		s.mu.Unlock()
 	}
 }
 
-func (s *Server) collectJSON() []byte {
-	entries, err := collector.Collect()
-	if err != nil {
-		log.Printf("collect error: %v", err)
-		return nil
+func (s *Server) sendAll(conn *websocket.Conn) {
+	for _, data := range s.collectAll() {
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			return
+		}
 	}
-	data, err := json.Marshal(entries)
-	if err != nil {
-		return nil
+}
+
+func (s *Server) collectAll() [][]byte {
+	var msgs [][]byte
+
+	if entries, err := collector.Collect(); err == nil {
+		if data, err := json.Marshal(message{Type: "ports", Data: entries}); err == nil {
+			msgs = append(msgs, data)
+		}
+	} else {
+		log.Printf("port collect error: %v", err)
 	}
-	return data
+
+	if gpuData, err := collector.CollectGPU(); err == nil {
+		if data, err := json.Marshal(message{Type: "gpu", Data: gpuData}); err == nil {
+			msgs = append(msgs, data)
+		}
+	}
+	// GPU errors are silently ignored (nvidia-smi may not exist)
+
+	return msgs
 }

@@ -1,4 +1,4 @@
-module github.com/vcdim/portview
+module github.com/vcdim/webtop
 
 go 1.22
 

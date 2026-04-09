@@ -2,7 +2,7 @@ version: 2
 
 builds:
   - main: .
-    binary: portview
+    binary: webtop
     env:
       - CGO_ENABLED=0
     goos:
@@ -19,29 +19,29 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 nfpms:
-  - id: portview
-    package_name: portview
+  - id: webtop
+    package_name: webtop
     vendor: vcdim
-    homepage: https://github.com/vcdim/portview
+    homepage: https://github.com/vcdim/webtop
     maintainer: vcdim
-    description: Lightweight web-based port monitor for Linux
+    description: Lightweight web-based system dashboard
     license: MIT
     formats:
       - deb
       - rpm
     contents:
-      - src: portview.service
-        dst: /etc/systemd/system/portview.service
+      - src: webtop.service
+        dst: /etc/systemd/system/webtop.service
         type: config
 
 brews:
   - repository:
       owner: vcdim
-      name: portview
+      name: webtop
       branch: homebrew
     directory: HomebrewFormula
-    homepage: https://github.com/vcdim/portview
-    description: Lightweight web-based port monitor
+    homepage: https://github.com/vcdim/webtop
+    description: Lightweight web-based system dashboard
     license: MIT
 
 checksum:

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>portview</title>
+<title>webtop</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   :root {
@@ -16,6 +16,7 @@
     --green: #3fb950;
     --red: #f85149;
     --yellow: #d29922;
+    --orange: #f0883e;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -33,12 +34,34 @@
     gap: 16px;
     flex-wrap: wrap;
   }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
   .logo {
     font-size: 20px;
     font-weight: 600;
     letter-spacing: -0.5px;
   }
   .logo span { color: var(--accent); }
+  .tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); background: var(--surface); }
+  .tab.active { color: var(--text); background: var(--surface); }
   .header-right {
     display: flex;
     align-items: center;
@@ -71,6 +94,10 @@
   .search-box:focus { border-color: var(--accent); }
   .search-box::placeholder { color: var(--text-dim); }
   main { padding: 16px 24px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Ports page */
   .stats {
     display: flex;
     gap: 24px;
@@ -151,58 +178,195 @@
     color: var(--text-dim);
   }
   .empty-state p { font-size: 15px; margin-top: 8px; }
+
+  /* GPU page */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 800px) {
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  .chart-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .chart-legend {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-dim);
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .legend-value {
+    color: var(--text);
+    font-weight: 600;
+    min-width: 32px;
+    text-align: right;
+  }
+  .chart-canvas {
+    width: 100%;
+    height: 150px;
+    display: block;
+  }
+  .gpu-procs-section {
+    margin-top: 16px;
+  }
+  .gpu-procs-section h3 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .gpu-procs-table {
+    table-layout: auto;
+  }
+  .gpu-procs-table th {
+    cursor: default;
+  }
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">port<span>view</span></div>
+  <div class="header-left">
+    <div class="logo">web<span>top</span></div>
+    <div class="tabs">
+      <button class="tab active" data-page="ports">Ports</button>
+      <button class="tab" data-page="gpu">GPU</button>
+    </div>
+  </div>
   <div class="header-right">
     <div class="status">
       <div class="status-dot" id="statusDot"></div>
       <span id="statusText">Connecting...</span>
     </div>
-    <input type="text" class="search-box" id="search" placeholder="Filter ports, processes...">
+    <input type="text" class="search-box" id="search" placeholder="Filter...">
   </div>
 </header>
 <main>
-  <div class="stats">
-    <span><strong id="totalPorts">0</strong> ports</span>
-    <span><strong id="totalProcesses">0</strong> processes</span>
-    <span>Updated: <strong id="lastUpdate">—</strong></span>
+  <!-- Ports page -->
+  <div class="page active" id="page-ports">
+    <div class="stats">
+      <span><strong id="totalPorts">0</strong> ports</span>
+      <span><strong id="totalProcesses">0</strong> processes</span>
+      <span>Updated: <strong id="lastUpdate">—</strong></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th data-col="port" class="sorted" style="width:5%">Port</th>
+          <th data-col="proto" style="width:6%">Protocol</th>
+          <th data-col="command">Command</th>
+          <th data-col="pid" style="width:6%">PID</th>
+          <th data-col="user" style="width:10%">User</th>
+          <th data-col="address" style="width:8%">Address</th>
+          <th data-col="count" style="width:5%">Count</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="7" class="empty-state"><p>Waiting for data...</p></td></tr>
+      </tbody>
+    </table>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th data-col="port" class="sorted" style="width:5%">Port</th>
-        <th data-col="proto" style="width:6%">Protocol</th>
-        <th data-col="command">Command</th>
-        <th data-col="pid" style="width:6%">PID</th>
-        <th data-col="user" style="width:10%">User</th>
-        <th data-col="address" style="width:8%">Address</th>
-        <th data-col="count" style="width:5%">Count</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody">
-      <tr><td colspan="7" class="empty-state"><p>Waiting for data...</p></td></tr>
-    </tbody>
-  </table>
+
+  <!-- GPU page -->
+  <div class="page" id="page-gpu">
+    <div class="stats" id="gpuStats">
+      <span><strong id="totalGPUs">0</strong> GPUs</span>
+      <span>Updated: <strong id="gpuLastUpdate">—</strong></span>
+    </div>
+    <div class="charts-row">
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="chart-title">GPU Utilization</div>
+          <div class="chart-legend" id="utilLegend"></div>
+        </div>
+        <canvas class="chart-canvas" id="utilChart"></canvas>
+      </div>
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="chart-title">Memory Usage</div>
+          <div class="chart-legend" id="memLegend"></div>
+        </div>
+        <canvas class="chart-canvas" id="memChart"></canvas>
+      </div>
+    </div>
+    <div class="gpu-procs-section" id="gpuProcsSection" style="display:none">
+      <h3>GPU Processes</h3>
+      <table class="gpu-procs-table">
+        <thead>
+          <tr>
+            <th style="width:8%">GPU</th>
+            <th style="width:10%">PID</th>
+            <th style="width:10%">User</th>
+            <th>Process</th>
+            <th style="width:12%">Memory</th>
+          </tr>
+        </thead>
+        <tbody id="gpuProcsBody"></tbody>
+      </table>
+    </div>
+  </div>
 </main>
 
 <script>
 (function() {
-  let entries = [];
+  let portEntries = [];
+  let gpuData = null;
   let sortCol = 'port';
   let sortAsc = true;
   let ws;
   let reconnectDelay = 1000;
+  let activePage = 'ports';
 
   const tbody = document.getElementById('tableBody');
   const search = document.getElementById('search');
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
 
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      activePage = tab.dataset.page;
+      document.getElementById('page-' + activePage).classList.add('active');
+      search.placeholder = activePage === 'ports' ? 'Filter ports, processes...' : 'Filter GPUs, processes...';
+      renderActive();
+    });
+  });
+
   function connect() {
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     ws = new WebSocket(proto + '//' + location.host + '/ws');
 
     ws.onopen = function() {
@@ -213,8 +377,15 @@
 
     ws.onmessage = function(e) {
       try {
-        entries = JSON.parse(e.data) || [];
-        render();
+        var msg = JSON.parse(e.data);
+        if (msg.type === 'ports') {
+          portEntries = msg.data || [];
+          if (activePage === 'ports') renderPorts();
+        } else if (msg.type === 'gpu') {
+          gpuData = msg.data;
+          pushGPUHistory();
+          if (activePage === 'gpu') renderGPU();
+        }
       } catch(err) {
         console.error('parse error:', err);
       }
@@ -227,16 +398,19 @@
       reconnectDelay = Math.min(reconnectDelay * 2, 30000);
     };
 
-    ws.onerror = function() {
-      ws.close();
-    };
+    ws.onerror = function() { ws.close(); };
   }
 
-  function render() {
-    const filter = search.value.toLowerCase();
-    let filtered = entries;
+  function renderActive() {
+    if (activePage === 'ports') renderPorts();
+    else renderGPU();
+  }
+
+  function renderPorts() {
+    var filter = search.value.toLowerCase();
+    var filtered = portEntries;
     if (filter) {
-      filtered = entries.filter(function(e) {
+      filtered = portEntries.filter(function(e) {
         return (
           String(e.port).includes(filter) ||
           e.proto.toLowerCase().includes(filter) ||
@@ -248,9 +422,8 @@
       });
     }
 
-    // Sort
     filtered.sort(function(a, b) {
-      let va = a[sortCol], vb = b[sortCol];
+      var va = a[sortCol], vb = b[sortCol];
       if (typeof va === 'string') va = va.toLowerCase();
       if (typeof vb === 'string') vb = vb.toLowerCase();
       if (va < vb) return sortAsc ? -1 : 1;
@@ -258,56 +431,203 @@
       return 0;
     });
 
-    // Update stats
-    const ports = new Set(entries.map(function(e) { return e.port; }));
-    const procs = new Set(entries.filter(function(e) { return e.process; }).map(function(e) { return e.process; }));
+    var ports = new Set(portEntries.map(function(e) { return e.port; }));
+    var procs = new Set(portEntries.filter(function(e) { return e.command; }).map(function(e) { return e.command; }));
     document.getElementById('totalPorts').textContent = ports.size;
     document.getElementById('totalProcesses').textContent = procs.size;
     document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
 
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>' +
-        (entries.length ? 'No matches' : 'No listening ports') + '</p></td></tr>';
+        (portEntries.length ? 'No matches' : 'No listening ports') + '</p></td></tr>';
       return;
     }
 
-    let html = '';
-    for (let i = 0; i < filtered.length; i++) {
-      const e = filtered[i];
-      const protoClass = e.proto === 'tcp' ? 'proto-tcp' : 'proto-udp';
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+      var e = filtered[i];
+      var protoClass = e.proto === 'tcp' ? 'proto-tcp' : 'proto-udp';
       html += '<tr>' +
         '<td>' + e.port + '</td>' +
         '<td><span class="proto ' + protoClass + '">' + e.proto + '</span></td>' +
-        '<td title="' + (e.command || '').replace(/"/g, '&quot;') + '">' + (e.command || '—') + '</td>' +
-        '<td>' + (e.pid || '—') + '</td>' +
-        '<td>' + (e.user || '—') + '</td>' +
-        '<td>' + (e.address || '—') + '</td>' +
+        '<td title="' + (e.command || '').replace(/"/g, '&quot;') + '">' + (e.command || '\u2014') + '</td>' +
+        '<td>' + (e.pid || '\u2014') + '</td>' +
+        '<td>' + (e.user || '\u2014') + '</td>' +
+        '<td>' + (e.address || '\u2014') + '</td>' +
         '<td>' + (e.count > 1 ? '<span class="count-badge">&times;' + e.count + '</span>' : '1') + '</td>' +
         '</tr>';
     }
     tbody.innerHTML = html;
   }
 
-  // Column sorting
-  document.querySelectorAll('thead th').forEach(function(th) {
+  // GPU chart state
+  var GPU_COLORS = ['#58a6ff', '#3fb950', '#d29922', '#f0883e', '#f85149', '#bc8cff', '#39d2c0', '#ff7eb3'];
+  var HISTORY_LEN = 120;
+  var utilHistory = {};  // gpu_index -> [values]
+  var memHistory = {};   // gpu_index -> [values]
+  var gpuNames = {};
+
+  function pushGPUHistory() {
+    if (!gpuData || !gpuData.gpus) return;
+    for (var i = 0; i < gpuData.gpus.length; i++) {
+      var g = gpuData.gpus[i];
+      gpuNames[g.index] = g.name;
+      if (!utilHistory[g.index]) utilHistory[g.index] = [];
+      if (!memHistory[g.index]) memHistory[g.index] = [];
+      utilHistory[g.index].push(g.gpu_util);
+      var memPct = g.mem_total > 0 ? Math.round(g.mem_used / g.mem_total * 100) : 0;
+      memHistory[g.index].push(memPct);
+      if (utilHistory[g.index].length > HISTORY_LEN) utilHistory[g.index].shift();
+      if (memHistory[g.index].length > HISTORY_LEN) memHistory[g.index].shift();
+    }
+  }
+
+  function drawChart(canvasId, history, labelSuffix) {
+    var canvas = document.getElementById(canvasId);
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var w = rect.width, h = rect.height;
+
+    // Clear
+    ctx.clearRect(0, 0, w, h);
+
+    // Grid lines
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 0.5;
+    for (var pct = 25; pct <= 75; pct += 25) {
+      var y = h - (pct / 100) * h;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    // Y-axis labels
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('100%', 30, 10);
+    ctx.fillText('50%', 26, h / 2 + 3);
+    ctx.fillText('0%', 20, h - 2);
+
+    var indices = Object.keys(history).sort(function(a, b) { return a - b; });
+    var padL = 35;
+    var plotW = w - padL;
+
+    for (var k = 0; k < indices.length; k++) {
+      var idx = indices[k];
+      var data = history[idx];
+      if (data.length < 2) continue;
+
+      ctx.strokeStyle = GPU_COLORS[idx % GPU_COLORS.length];
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      var step = plotW / (HISTORY_LEN - 1);
+      var startOffset = HISTORY_LEN - data.length;
+      for (var j = 0; j < data.length; j++) {
+        var x = padL + (startOffset + j) * step;
+        var yv = h - (data[j] / 100) * h;
+        if (j === 0) ctx.moveTo(x, yv);
+        else ctx.lineTo(x, yv);
+      }
+      ctx.stroke();
+    }
+  }
+
+  function updateLegend(legendId, history, gpuData, suffix) {
+    var el = document.getElementById(legendId);
+    if (!gpuData || !gpuData.gpus) { el.innerHTML = ''; return; }
+    var html = '';
+    for (var i = 0; i < gpuData.gpus.length; i++) {
+      var g = gpuData.gpus[i];
+      var color = GPU_COLORS[g.index % GPU_COLORS.length];
+      var vals = history[g.index];
+      var current = vals && vals.length > 0 ? vals[vals.length - 1] : 0;
+      html += '<div class="legend-item">' +
+        '<div class="legend-dot" style="background:' + color + '"></div>' +
+        '<span>GPU ' + g.index + '</span>' +
+        '<span class="legend-value">' + current + suffix + '</span>' +
+        '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function renderGPU() {
+    var procsSection = document.getElementById('gpuProcsSection');
+    var procsBody = document.getElementById('gpuProcsBody');
+
+    if (!gpuData || !gpuData.gpus || gpuData.gpus.length === 0) {
+      procsSection.style.display = 'none';
+      document.getElementById('totalGPUs').textContent = '0';
+      return;
+    }
+
+    document.getElementById('totalGPUs').textContent = gpuData.gpus.length;
+    document.getElementById('gpuLastUpdate').textContent = new Date().toLocaleTimeString();
+
+    drawChart('utilChart', utilHistory, '%');
+    drawChart('memChart', memHistory, '%');
+    updateLegend('utilLegend', utilHistory, gpuData, '%');
+    updateLegend('memLegend', memHistory, gpuData, '%');
+
+    // GPU processes table
+    var filter = search.value.toLowerCase();
+    var procs = gpuData.processes || [];
+    if (filter) {
+      procs = procs.filter(function(p) {
+        return p.name.toLowerCase().indexOf(filter) !== -1 ||
+               String(p.pid).indexOf(filter) !== -1 ||
+               String(p.gpu_index).indexOf(filter) !== -1 ||
+               (p.user || '').toLowerCase().indexOf(filter) !== -1;
+      });
+    }
+    if (procs.length > 0) {
+      procsSection.style.display = 'block';
+      var phtml = '';
+      for (var j = 0; j < procs.length; j++) {
+        var p = procs[j];
+        phtml += '<tr>' +
+          '<td>' + p.gpu_index + '</td>' +
+          '<td>' + p.pid + '</td>' +
+          '<td>' + esc(p.user || '\u2014') + '</td>' +
+          '<td title="' + esc(p.name) + '">' + esc(p.name) + '</td>' +
+          '<td>' + p.mem_used_mb + ' MB</td>' +
+          '</tr>';
+      }
+      procsBody.innerHTML = phtml;
+    } else {
+      procsSection.style.display = 'none';
+    }
+  }
+
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Column sorting (ports table)
+  document.querySelectorAll('#page-ports thead th').forEach(function(th) {
     th.addEventListener('click', function() {
-      const col = th.dataset.col;
+      var col = th.dataset.col;
       if (sortCol === col) {
         sortAsc = !sortAsc;
       } else {
         sortCol = col;
         sortAsc = true;
       }
-      document.querySelectorAll('thead th').forEach(function(t) { t.classList.remove('sorted'); });
+      document.querySelectorAll('#page-ports thead th').forEach(function(t) { t.classList.remove('sorted'); });
       th.classList.add('sorted');
-      render();
+      renderPorts();
     });
   });
 
-  search.addEventListener('input', render);
+  search.addEventListener('input', renderActive);
 
-  // Column resizing
-  document.querySelectorAll('thead th').forEach(function(th) {
+  // Column resizing (ports table)
+  document.querySelectorAll('#page-ports thead th').forEach(function(th) {
     var handle = document.createElement('div');
     handle.className = 'resize-handle';
     th.appendChild(handle);
