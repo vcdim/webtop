@@ -1,43 +1,44 @@
-# portview
+# webtop
 
-Lightweight, single-binary web-based port monitor. Real-time port → process → PID → user mappings in your browser.
+Lightweight, single-binary web-based system dashboard. Real-time port monitoring and GPU status in your browser.
 
-![screenshot](assets/screenshot.png)
+![ports](assets/ports.png)
+![gpu](assets/gpu.png)
 
 ## Install
 
 ```
-curl -fsSL https://vcdim.github.io/portview/install.sh | bash
+curl -fsSL https://vcdim.github.io/webtop/install.sh | bash
 ```
 
 ## Usage
 
 ```
-sudo portview
+sudo webtop
 ```
 
 Open http://localhost:9999. Use `-p` to change port, `-i` to change refresh interval:
 
 ```
-sudo portview -p 8080 -i 5s
+sudo webtop -p 8080 -i 5s
 ```
 
 Or run as a systemd service:
 
 ```
-sudo systemctl enable --now portview
+sudo systemctl enable --now webtop
 ```
 
 ## Uninstall
 
 ```
-curl -fsSL https://vcdim.github.io/portview/uninstall.sh | sudo bash
+curl -fsSL https://vcdim.github.io/webtop/uninstall.sh | sudo bash
 ```
 
 ## Build from Source
 
 ```
-go build -o portview .
+go build -o webtop .
 ```
 
 ## License

@@ -1,10 +1,10 @@
 [Unit]
-Description=portview - lightweight web-based port monitor
+Description=webtop - lightweight web-based system dashboard
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/portview -port 9999
+ExecStart=/usr/bin/webtop -port 9999
 Restart=on-failure
 RestartSec=5
 

@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/vcdim/portview/internal/server"
+	"github.com/vcdim/webtop/internal/server"
 )
 
 //go:embed web
@@ -29,7 +29,7 @@ func main() {
 	addr := fmt.Sprintf(":%d", *port)
 	srv := server.New(addr, *interval, webContent)
 
-	log.Printf("Starting portview on http://localhost:%d", *port)
+	log.Printf("Starting webtop on http://localhost:%d", *port)
 	if err := srv.Start(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}

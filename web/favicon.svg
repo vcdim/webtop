@@ -5,10 +5,13 @@
       <stop offset="100%" stop-color="#3fb950"/>
     </linearGradient>
   </defs>
-  <!-- Eye shape -->
-  <ellipse cx="16" cy="16" rx="12" ry="7.5" fill="none" stroke="url(#g)" stroke-width="2.5"/>
-  <!-- Pupil -->
-  <circle cx="16" cy="16" r="4" fill="url(#g)"/>
-  <!-- Inner dot -->
-  <circle cx="16" cy="16" r="1.5" fill="white"/>
+  <!-- Monitor -->
+  <rect x="4" y="5" width="24" height="17" rx="2" fill="none" stroke="url(#g)" stroke-width="2"/>
+  <!-- Screen content - bars -->
+  <rect x="8" y="10" width="4" height="8" rx="1" fill="url(#g)" opacity="0.6"/>
+  <rect x="14" y="12" width="4" height="6" rx="1" fill="url(#g)" opacity="0.8"/>
+  <rect x="20" y="8" width="4" height="10" rx="1" fill="url(#g)"/>
+  <!-- Stand -->
+  <line x1="16" y1="22" x2="16" y2="26" stroke="url(#g)" stroke-width="2"/>
+  <line x1="11" y1="26" x2="21" y2="26" stroke="url(#g)" stroke-width="2" stroke-linecap="round"/>
 </svg>
