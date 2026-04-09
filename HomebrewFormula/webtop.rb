@@ -5,21 +5,21 @@
 class Webtop < Formula
   desc "Lightweight web-based system dashboard"
   homepage "https://github.com/vcdim/webtop"
-  version "0.4.0"
+  version "0.4.1"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/vcdim/webtop/releases/download/v0.4.0/webtop_0.4.0_darwin_amd64.tar.gz"
-      sha256 "b3b9acdbf45bb3fb3d3fc9c0b9773b5a2345f72d2973e410afc65c9aca022c64"
+      url "https://github.com/vcdim/webtop/releases/download/v0.4.1/webtop_0.4.1_darwin_amd64.tar.gz"
+      sha256 "bc61aa37fcc7b0794c70679692d0df97271307688c1ec56d8eb1cfb1988c93cd"
 
       define_method(:install) do
         bin.install "webtop"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/vcdim/webtop/releases/download/v0.4.0/webtop_0.4.0_darwin_arm64.tar.gz"
-      sha256 "92dbed05b5fce96b8aea31ce2e6a588990e960264e8c263c445b2075bd53bad7"
+      url "https://github.com/vcdim/webtop/releases/download/v0.4.1/webtop_0.4.1_darwin_arm64.tar.gz"
+      sha256 "d824583c1844044f2fbbfdaed76ae9ed633e364e00678ef8364c3c2b9d50f336"
 
       define_method(:install) do
         bin.install "webtop"
@@ -29,15 +29,15 @@ class Webtop < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/vcdim/webtop/releases/download/v0.4.0/webtop_0.4.0_linux_amd64.tar.gz"
-      sha256 "08475c9e10b7dea10a9b697a78f4c38d1c51dce936f2d3901de48073e8875e1a"
+      url "https://github.com/vcdim/webtop/releases/download/v0.4.1/webtop_0.4.1_linux_amd64.tar.gz"
+      sha256 "43496700d6a77f1e34bf3d2403dd5921db84fb84d81f3d6417d9cbee7d6f2689"
       define_method(:install) do
         bin.install "webtop"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/vcdim/webtop/releases/download/v0.4.0/webtop_0.4.0_linux_arm64.tar.gz"
-      sha256 "c975fb6a3b69d386dd11194fbd941805385960ec7e1cbc5d8ecef17fb66190e5"
+      url "https://github.com/vcdim/webtop/releases/download/v0.4.1/webtop_0.4.1_linux_arm64.tar.gz"
+      sha256 "cde33903bfe169f19677583aee433676397e5dd3f2bdfdd3c8673a74d070080a"
       define_method(:install) do
         bin.install "webtop"
       end
