@@ -180,56 +180,65 @@
   .empty-state p { font-size: 15px; margin-top: 8px; }
 
   /* GPU page */
-  .charts-row {
+  .gpu-cards {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
     margin-bottom: 16px;
   }
-  @media (max-width: 800px) {
-    .charts-row { grid-template-columns: 1fr; }
+  @media (max-width: 1200px) {
+    .gpu-cards { grid-template-columns: repeat(2, 1fr); }
   }
-  .chart-section {
+  @media (max-width: 600px) {
+    .gpu-cards { grid-template-columns: 1fr; }
+  }
+  .gpu-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 16px;
+    padding: 12px;
   }
-  .chart-title {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-  }
-  .chart-legend {
+  .gpu-card-header {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px 10px;
-    font-size: 11px;
-    margin-top: 8px;
-  }
-  .legend-item {
-    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 3px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .gpu-card-name {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .gpu-card-stats {
+    display: flex;
+    gap: 10px;
     color: var(--text-dim);
   }
-  .legend-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-  .legend-value {
-    color: var(--text);
-    font-weight: 600;
-  }
-  .chart-canvas {
+  .gpu-card-stats .util-val { color: var(--accent); font-weight: 600; }
+  .gpu-card-stats .mem-val { color: var(--green); font-weight: 600; }
+  .gpu-card canvas {
     width: 100%;
-    height: 200px;
+    height: 120px;
     display: block;
   }
+  .gpu-card-legend {
+    display: flex;
+    gap: 12px;
+    font-size: 10px;
+    margin-top: 4px;
+    color: var(--text-dim);
+  }
+  .gpu-card-legend span::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 3px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border-radius: 1px;
+  }
+  .gpu-card-legend .leg-util::before { background: var(--accent); }
+  .gpu-card-legend .leg-mem::before { background: var(--green); }
   .gpu-procs-section {
     margin-top: 16px;
   }
@@ -298,18 +307,7 @@
       <span><strong id="totalGPUs">0</strong> GPUs</span>
       <span>Updated: <strong id="gpuLastUpdate">—</strong></span>
     </div>
-    <div class="charts-row">
-      <div class="chart-section">
-        <div class="chart-title">GPU Utilization</div>
-        <canvas class="chart-canvas" id="utilChart"></canvas>
-        <div class="chart-legend" id="utilLegend"></div>
-      </div>
-      <div class="chart-section">
-        <div class="chart-title">Memory Usage</div>
-        <canvas class="chart-canvas" id="memChart"></canvas>
-        <div class="chart-legend" id="memLegend"></div>
-      </div>
-    </div>
+    <div class="gpu-cards" id="gpuCards"></div>
     <div class="gpu-procs-section" id="gpuProcsSection" style="display:none">
       <h3>GPU Processes</h3>
       <table class="gpu-procs-table">
@@ -452,17 +450,14 @@
   }
 
   // GPU chart state
-  var GPU_COLORS = ['#58a6ff', '#3fb950', '#d29922', '#f0883e', '#f85149', '#bc8cff', '#39d2c0', '#ff7eb3'];
   var HISTORY_LEN = 120;
-  var utilHistory = {};  // gpu_index -> [values]
-  var memHistory = {};   // gpu_index -> [values]
-  var gpuNames = {};
+  var utilHistory = {};
+  var memHistory = {};
 
   function pushGPUHistory() {
     if (!gpuData || !gpuData.gpus) return;
     for (var i = 0; i < gpuData.gpus.length; i++) {
       var g = gpuData.gpus[i];
-      gpuNames[g.index] = g.name;
       if (!utilHistory[g.index]) utilHistory[g.index] = [];
       if (!memHistory[g.index]) memHistory[g.index] = [];
       utilHistory[g.index].push(g.gpu_util);
@@ -473,8 +468,7 @@
     }
   }
 
-  function drawChart(canvasId, history, labelSuffix) {
-    var canvas = document.getElementById(canvasId);
+  function drawGPUCard(canvas, utilData, memData) {
     var dpr = window.devicePixelRatio || 1;
     var rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
@@ -483,21 +477,17 @@
     ctx.scale(dpr, dpr);
     var w = rect.width, h = rect.height;
 
-    // Clear
     ctx.clearRect(0, 0, w, h);
 
-    // Grid lines
+    // Grid
     ctx.strokeStyle = '#30363d';
     ctx.lineWidth = 0.5;
     for (var pct = 25; pct <= 75; pct += 25) {
       var y = h - (pct / 100) * h;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    // Y-axis labels
+    // Y-axis
     ctx.fillStyle = '#8b949e';
     ctx.font = '10px -apple-system, sans-serif';
     ctx.textAlign = 'right';
@@ -505,52 +495,34 @@
     ctx.fillText('50%', 26, h / 2 + 3);
     ctx.fillText('0%', 20, h - 2);
 
-    var indices = Object.keys(history).sort(function(a, b) { return a - b; });
-    var padL = 35;
-    var plotW = w - padL;
+    var padL = 35, plotW = w - padL;
 
-    for (var k = 0; k < indices.length; k++) {
-      var idx = indices[k];
-      var data = history[idx];
-      if (data.length < 2) continue;
-
-      ctx.strokeStyle = GPU_COLORS[idx % GPU_COLORS.length];
+    function drawLine(data, color) {
+      if (!data || data.length < 2) return;
+      ctx.strokeStyle = color;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       var step = plotW / (HISTORY_LEN - 1);
-      var startOffset = HISTORY_LEN - data.length;
+      var off = HISTORY_LEN - data.length;
       for (var j = 0; j < data.length; j++) {
-        var x = padL + (startOffset + j) * step;
+        var x = padL + (off + j) * step;
         var yv = h - (data[j] / 100) * h;
-        if (j === 0) ctx.moveTo(x, yv);
-        else ctx.lineTo(x, yv);
+        if (j === 0) ctx.moveTo(x, yv); else ctx.lineTo(x, yv);
       }
       ctx.stroke();
     }
-  }
 
-  function updateLegend(legendId, history, gpuData, suffix) {
-    var el = document.getElementById(legendId);
-    if (!gpuData || !gpuData.gpus) { el.innerHTML = ''; return; }
-    var html = '';
-    for (var i = 0; i < gpuData.gpus.length; i++) {
-      var g = gpuData.gpus[i];
-      var color = GPU_COLORS[g.index % GPU_COLORS.length];
-      var vals = history[g.index];
-      var current = vals && vals.length > 0 ? vals[vals.length - 1] : 0;
-      html += '<div class="legend-item">' +
-        '<div class="legend-dot" style="background:' + color + '"></div>' +
-        '<span class="legend-value">' + current + suffix + '</span>' +
-        '</div>';
-    }
-    el.innerHTML = html;
+    drawLine(utilData, '#58a6ff');
+    drawLine(memData, '#3fb950');
   }
 
   function renderGPU() {
+    var cardsEl = document.getElementById('gpuCards');
     var procsSection = document.getElementById('gpuProcsSection');
     var procsBody = document.getElementById('gpuProcsBody');
 
     if (!gpuData || !gpuData.gpus || gpuData.gpus.length === 0) {
+      cardsEl.innerHTML = '';
       procsSection.style.display = 'none';
       document.getElementById('totalGPUs').textContent = '0';
       return;
@@ -559,10 +531,34 @@
     document.getElementById('totalGPUs').textContent = gpuData.gpus.length;
     document.getElementById('gpuLastUpdate').textContent = new Date().toLocaleTimeString();
 
-    drawChart('utilChart', utilHistory, '%');
-    drawChart('memChart', memHistory, '%');
-    updateLegend('utilLegend', utilHistory, gpuData, '%');
-    updateLegend('memLegend', memHistory, gpuData, '%');
+    // Create or update cards
+    for (var i = 0; i < gpuData.gpus.length; i++) {
+      var g = gpuData.gpus[i];
+      var cardId = 'gpu-card-' + g.index;
+      var card = document.getElementById(cardId);
+      if (!card) {
+        card = document.createElement('div');
+        card.className = 'gpu-card';
+        card.id = cardId;
+        card.innerHTML =
+          '<div class="gpu-card-header">' +
+            '<span class="gpu-card-name"></span>' +
+            '<span class="gpu-card-stats"></span>' +
+          '</div>' +
+          '<canvas></canvas>' +
+          '<div class="gpu-card-legend">' +
+            '<span class="leg-util">Util</span>' +
+            '<span class="leg-mem">Mem</span>' +
+          '</div>';
+        cardsEl.appendChild(card);
+      }
+      var memPct = g.mem_total > 0 ? Math.round(g.mem_used / g.mem_total * 100) : 0;
+      card.querySelector('.gpu-card-name').textContent = 'GPU ' + g.index + ': ' + g.name;
+      card.querySelector('.gpu-card-stats').innerHTML =
+        '<span class="util-val">' + g.gpu_util + '%</span> ' +
+        '<span class="mem-val">' + g.mem_used + '/' + g.mem_total + ' MB</span>';
+      drawGPUCard(card.querySelector('canvas'), utilHistory[g.index], memHistory[g.index]);
+    }
 
     // GPU processes table
     var filter = search.value.toLowerCase();
