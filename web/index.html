@@ -199,21 +199,35 @@
     padding: 12px;
   }
   .gpu-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 8px;
     font-size: 12px;
   }
   .gpu-card-name {
     font-weight: 600;
     color: var(--text);
+    margin-bottom: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .gpu-card-stats {
     display: flex;
-    gap: 10px;
+    gap: 14px;
     color: var(--text-dim);
+    font-size: 11px;
   }
+  .gpu-card-stats span::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 3px;
+    margin-right: 5px;
+    vertical-align: middle;
+    border-radius: 1px;
+  }
+  .gpu-card-stats .util-val::before { background: var(--accent); }
+  .gpu-card-stats .mem-val::before { background: var(--green); }
   .gpu-card-stats .util-val { color: var(--accent); font-weight: 600; }
   .gpu-card-stats .mem-val { color: var(--green); font-weight: 600; }
   .gpu-card canvas {
@@ -221,24 +235,6 @@
     height: 120px;
     display: block;
   }
-  .gpu-card-legend {
-    display: flex;
-    gap: 12px;
-    font-size: 10px;
-    margin-top: 4px;
-    color: var(--text-dim);
-  }
-  .gpu-card-legend span::before {
-    content: '';
-    display: inline-block;
-    width: 8px;
-    height: 3px;
-    margin-right: 4px;
-    vertical-align: middle;
-    border-radius: 1px;
-  }
-  .gpu-card-legend .leg-util::before { background: var(--accent); }
-  .gpu-card-legend .leg-mem::before { background: var(--green); }
   .gpu-procs-section {
     margin-top: 16px;
   }
@@ -545,18 +541,14 @@
             '<span class="gpu-card-name"></span>' +
             '<span class="gpu-card-stats"></span>' +
           '</div>' +
-          '<canvas></canvas>' +
-          '<div class="gpu-card-legend">' +
-            '<span class="leg-util">Util</span>' +
-            '<span class="leg-mem">Mem</span>' +
-          '</div>';
+          '<canvas></canvas>';
         cardsEl.appendChild(card);
       }
       var memPct = g.mem_total > 0 ? Math.round(g.mem_used / g.mem_total * 100) : 0;
       card.querySelector('.gpu-card-name').textContent = 'GPU ' + g.index + ': ' + g.name;
       card.querySelector('.gpu-card-stats').innerHTML =
-        '<span class="util-val">' + g.gpu_util + '%</span> ' +
-        '<span class="mem-val">' + g.mem_used + '/' + g.mem_total + ' MB</span>';
+        '<span class="util-val">Util: ' + g.gpu_util + '%</span>' +
+        '<span class="mem-val">Mem: ' + g.mem_used + '/' + g.mem_total + ' MB</span>';
       drawGPUCard(card.querySelector('canvas'), utilHistory[g.index], memHistory[g.index]);
     }
 
