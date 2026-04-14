@@ -228,8 +228,8 @@
   }
   .gpu-card-stats .util-val::before { background: var(--accent); }
   .gpu-card-stats .mem-val::before { background: var(--green); }
-  .gpu-card-stats .util-val { color: var(--accent); font-weight: 600; }
-  .gpu-card-stats .mem-val { color: var(--green); font-weight: 600; }
+  .gpu-card-stats .util-val { font-weight: 600; }
+  .gpu-card-stats .mem-val { font-weight: 600; }
   .gpu-card canvas {
     width: 100%;
     height: 120px;
@@ -464,6 +464,20 @@
     }
   }
 
+  function lerpColor(r1,g1,b1, r2,g2,b2, t) {
+    return 'rgb(' +
+      Math.round(r1 + (r2 - r1) * t) + ',' +
+      Math.round(g1 + (g2 - g1) * t) + ',' +
+      Math.round(b1 + (b2 - b1) * t) + ')';
+  }
+  function utilColor(v) {
+    return lerpColor(88,166,255, 188,140,255, v / 100);
+  }
+  function memColor(v) {
+    if (v <= 50) return lerpColor(63,185,80, 210,153,34, v / 50);
+    return lerpColor(210,153,34, 248,81,73, (v - 50) / 50);
+  }
+
   function drawGPUCard(canvas, utilData, memData) {
     var dpr = window.devicePixelRatio || 1;
     var rect = canvas.getBoundingClientRect();
@@ -493,23 +507,26 @@
 
     var padL = 35, plotW = w - padL;
 
-    function drawLine(data, color) {
+    function drawLine(data, colorFn) {
       if (!data || data.length < 2) return;
-      ctx.strokeStyle = color;
       ctx.lineWidth = 1.5;
-      ctx.beginPath();
       var step = plotW / (HISTORY_LEN - 1);
       var off = HISTORY_LEN - data.length;
-      for (var j = 0; j < data.length; j++) {
-        var x = padL + (off + j) * step;
-        var yv = h - (data[j] / 100) * h;
-        if (j === 0) ctx.moveTo(x, yv); else ctx.lineTo(x, yv);
+      for (var j = 1; j < data.length; j++) {
+        var x0 = padL + (off + j - 1) * step;
+        var y0 = h - (data[j-1] / 100) * h;
+        var x1 = padL + (off + j) * step;
+        var y1 = h - (data[j] / 100) * h;
+        ctx.strokeStyle = colorFn((data[j-1] + data[j]) / 2);
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
       }
-      ctx.stroke();
     }
 
-    drawLine(utilData, '#58a6ff');
-    drawLine(memData, '#3fb950');
+    drawLine(utilData, utilColor);
+    drawLine(memData, memColor);
   }
 
   function renderGPU() {
@@ -547,8 +564,8 @@
       var memPct = g.mem_total > 0 ? Math.round(g.mem_used / g.mem_total * 100) : 0;
       card.querySelector('.gpu-card-name').textContent = 'GPU ' + g.index + ': ' + g.name;
       card.querySelector('.gpu-card-stats').innerHTML =
-        '<span class="util-val">Util: ' + g.gpu_util + '%</span>' +
-        '<span class="mem-val">Mem: ' + g.mem_used + '/' + g.mem_total + ' MB</span>';
+        '<span class="util-val" style="color:' + utilColor(g.gpu_util) + '">Util: ' + g.gpu_util + '%</span>' +
+        '<span class="mem-val" style="color:' + memColor(memPct) + '">Mem: ' + g.mem_used + '/' + g.mem_total + ' MB</span>';
       drawGPUCard(card.querySelector('canvas'), utilHistory[g.index], memHistory[g.index]);
     }
 
