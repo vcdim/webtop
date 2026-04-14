@@ -1,0 +1,29 @@
+Package: webtop
+Version: 0.4.6
+Architecture: arm64
+Maintainer: vcdim
+Installed-Size: 6144
+Filename: ./webtop_0.4.6_linux_arm64.deb
+Size: 2589954
+MD5sum: 94fe948640afd64b22ae61cdd300d5d7
+SHA1: 6aa83893a20cc0dbbcc5dc765c533376a2027c1d
+SHA256: 2003e04be9bf9b5dc938a914973fe8d6716d5f756eb22deb63e118557dec069a
+Priority: optional
+Homepage: https://github.com/vcdim/webtop
+Description: Lightweight web-based system dashboard
+
+Package: webtop
+Version: 0.4.6
+Architecture: amd64
+Maintainer: vcdim
+Installed-Size: 6588
+Filename: ./webtop_0.4.6_linux_amd64.deb
+Size: 2854162
+MD5sum: 788a2992c8ad2fe98ff0648fd114d9c6
+SHA1: 4889c32d22004c520bb843f4113bb41874843b6d
+SHA256: 6036382254861f99b5531919b0d7fc069f3b74ac26176a34e1029c68a013e447
+Priority: optional
+Homepage: https://github.com/vcdim/webtop
+Description: Lightweight web-based system dashboard
+Architecture-Variant: amd64v1
+
