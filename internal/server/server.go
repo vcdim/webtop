@@ -55,12 +55,19 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Collect outside the lock (collectors shell out and can be slow), then
+	// register + write the initial snapshot under the same lock the broadcast
+	// loop holds while writing. gorilla/websocket panics on concurrent writes,
+	// so every write to a conn must happen under s.mu.
+	initial := s.collectAll()
 	s.mu.Lock()
 	s.clients[conn] = struct{}{}
+	for _, data := range initial {
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			break
+		}
+	}
 	s.mu.Unlock()
-
-	// Send initial data immediately
-	s.sendAll(conn)
 
 	// Read loop keeps connection alive; clean up on disconnect
 	for {
@@ -93,14 +100,6 @@ func (s *Server) broadcastLoop() {
 	}
 }
 
-func (s *Server) sendAll(conn *websocket.Conn) {
-	for _, data := range s.collectAll() {
-		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
-			return
-		}
-	}
-}
-
 func (s *Server) collectAll() [][]byte {
 	var msgs [][]byte
 
@@ -110,6 +109,14 @@ func (s *Server) collectAll() [][]byte {
 		}
 	} else {
 		log.Printf("port collect error: %v", err)
+	}
+
+	if sysData, err := collector.CollectSystem(); err == nil {
+		if data, err := json.Marshal(message{Type: "sys", Data: sysData}); err == nil {
+			msgs = append(msgs, data)
+		}
+	} else {
+		log.Printf("system collect error: %v", err)
 	}
 
 	if gpuData, err := collector.CollectGPU(); err == nil {

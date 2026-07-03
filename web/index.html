@@ -6,7 +6,7 @@
 <title>webtop</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
-  :root {
+  :root, :root[data-theme="dark"] {
     --bg: #0d1117;
     --surface: #161b22;
     --border: #30363d;
@@ -17,6 +17,18 @@
     --red: #f85149;
     --yellow: #d29922;
     --orange: #f0883e;
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-dim: #656d76;
+    --accent: #0969da;
+    --green: #1a7f37;
+    --red: #cf222e;
+    --yellow: #9a6700;
+    --orange: #bc4c00;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -93,6 +105,16 @@
   }
   .search-box:focus { border-color: var(--accent); }
   .search-box::placeholder { color: var(--text-dim); }
+  .theme-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
   main { padding: 16px 24px; }
   .page { display: none; }
   .page.active { display: block; }
@@ -252,6 +274,124 @@
   .gpu-procs-table th {
     cursor: default;
   }
+
+  /* System page */
+  .sys-section { margin-bottom: 20px; }
+  .sys-section-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sys-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .sys-chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+  @media (max-width: 800px) {
+    .sys-chart-row { grid-template-columns: 1fr; }
+  }
+  .sys-card canvas {
+    width: 100%;
+    height: 120px;
+    display: block;
+  }
+  .sys-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .sys-card-head .big {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  /* Stacked split / mem bar */
+  .split-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0 6px;
+    background: var(--border);
+  }
+  .split-bar > span { height: 100%; }
+  .split-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .split-legend i {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  /* Core utilization histogram */
+  .hist-wrap { display: flex; gap: 6px; margin-top: 10px; }
+  .hist-yaxis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 24px;
+    height: 90px;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .cpu-hist {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 90px;
+  }
+  .hist-col {
+    flex: 1 1 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .hist-col .cnt {
+    font-size: 9px;
+    line-height: 1;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+  }
+  .hist-col .bar {
+    width: 100%;
+    background: var(--border);
+    border-radius: 2px 2px 0 0;
+    transition: height 0.3s;
+  }
+  .hist-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    padding-left: 30px;
+  }
 </style>
 </head>
 <body>
@@ -259,8 +399,9 @@
   <div class="header-left">
     <div class="logo">web<span>top</span></div>
     <div class="tabs">
-      <button class="tab active" data-page="ports">Ports</button>
+      <button class="tab active" data-page="sys">System</button>
       <button class="tab" data-page="gpu">GPU</button>
+      <button class="tab" data-page="ports">Ports</button>
     </div>
   </div>
   <div class="header-right">
@@ -269,11 +410,78 @@
       <span id="statusText">Connecting...</span>
     </div>
     <input type="text" class="search-box" id="search" placeholder="Filter...">
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">🌙</button>
   </div>
 </header>
 <main>
+  <!-- System page -->
+  <div class="page active" id="page-sys">
+    <div class="sys-chart-row">
+    <div class="sys-section">
+      <div class="sys-section-title">
+        <span>CPU <span id="coreCount" style="color:var(--text-dim)"></span></span>
+      </div>
+      <div class="sys-card">
+        <div class="sys-card-head">
+          <span class="big" id="cpuBig">0%</span>
+          <span id="cpuBreak">—</span>
+        </div>
+        <canvas id="cpuChart"></canvas>
+        <div class="split-bar" id="cpuSplit"></div>
+        <div class="split-legend">
+          <span><i style="background:var(--accent)"></i>user <b id="lgUser">0%</b></span>
+          <span><i style="background:var(--orange)"></i>system <b id="lgSys">0%</b></span>
+          <span><i style="background:var(--yellow)"></i>iowait <b id="lgIO">0%</b></span>
+          <span><i style="background:var(--border)"></i>idle <b id="lgIdle">0%</b></span>
+        </div>
+        <div id="cpuCoresWrap">
+          <div class="hist-wrap">
+            <div class="hist-yaxis"><span id="histMax">0</span><span>0</span></div>
+            <div class="cpu-hist" id="cpuBars"></div>
+          </div>
+          <div class="hist-axis" id="histAxis">
+            <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sys-section">
+      <div class="sys-section-title">Memory</div>
+      <div class="sys-card">
+        <div class="sys-card-head">
+          <span class="big" id="memBig">0%</span>
+          <span id="memDetail">—</span>
+        </div>
+        <canvas id="memChart"></canvas>
+        <div class="split-bar" id="memBar"></div>
+        <div class="split-legend">
+          <span><i id="lgMemSwatch"></i>used <b id="lgMemUsed">0</b></span>
+          <span><i style="background:var(--border)"></i>available <b id="lgMemAvail">0</b></span>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div class="sys-section" id="sysProcsSection" style="display:none">
+      <div class="sys-section-title">Top processes</div>
+      <table class="gpu-procs-table" id="sysProcsTable">
+        <thead>
+          <tr>
+            <th style="width:8%">PID</th>
+            <th style="width:14%">User</th>
+            <th>Command</th>
+            <th data-sortk="cpu" class="sorted" style="width:10%">CPU%</th>
+            <th data-sortk="mem" style="width:10%">Mem%</th>
+          </tr>
+        </thead>
+        <tbody id="sysProcsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Ports page -->
-  <div class="page active" id="page-ports">
+  <div class="page" id="page-ports">
     <div class="stats">
       <span><strong id="totalPorts">0</strong> ports</span>
       <span><strong id="totalProcesses">0</strong> processes</span>
@@ -326,55 +534,71 @@
 (function() {
   let portEntries = [];
   let gpuData = null;
+  let sysData = null;
   let sortCol = 'port';
   let sortAsc = true;
+  let procSortKey = 'cpu';
   let ws;
   let reconnectDelay = 1000;
-  let activePage = 'ports';
+  let activePage = 'sys';
+
+  const PAGES = ['sys', 'gpu', 'ports'];
+  const PLACEHOLDERS = {
+    sys: 'Filter processes...',
+    gpu: 'Filter GPUs, processes...',
+    ports: 'Filter ports, processes...'
+  };
 
   const tbody = document.getElementById('tableBody');
   const search = document.getElementById('search');
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
 
+  // Theme (dark default; persisted in localStorage). Canvases read CSS vars so
+  // they follow the theme after a re-render.
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    document.getElementById('themeToggle').textContent = theme === 'light' ? '☀️' : '🌙';
+    try { localStorage.setItem('webtop-theme', theme); } catch (e) {}
+  }
+  (function initTheme() {
+    var saved;
+    try { saved = localStorage.getItem('webtop-theme'); } catch (e) {}
+    applyTheme(saved === 'light' ? 'light' : 'dark');
+  })();
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+    renderActive();
+  });
+
+  function switchPage(page) {
+    if (!page || page === activePage) return;
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelector('.tab[data-page="' + page + '"]').classList.add('active');
+    document.getElementById('page-' + page).classList.add('active');
+    activePage = page;
+    search.placeholder = PLACEHOLDERS[page];
+    renderActive();
+  }
+
   // Tab switching
   document.querySelectorAll('.tab').forEach(function(tab) {
-    tab.addEventListener('click', function() {
-      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-      tab.classList.add('active');
-      activePage = tab.dataset.page;
-      document.getElementById('page-' + activePage).classList.add('active');
-      search.placeholder = activePage === 'ports' ? 'Filter ports, processes...' : 'Filter GPUs, processes...';
-      renderActive();
-    });
+    tab.addEventListener('click', function() { switchPage(tab.dataset.page); });
   });
 
   // Keyboard shortcuts
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT') return;
-    var page = null;
-    if (e.key === 'p') page = 'ports';
-    if (e.key === 'g') page = 'gpu';
-    if (page && page !== activePage) {
-      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-      document.querySelector('.tab[data-page="' + page + '"]').classList.add('active');
-      activePage = page;
-      document.getElementById('page-' + activePage).classList.add('active');
-      search.placeholder = activePage === 'ports' ? 'Filter ports, processes...' : 'Filter GPUs, processes...';
-      renderActive();
-    }
+    if (e.key === 's') switchPage('sys');
+    if (e.key === 'g') switchPage('gpu');
+    if (e.key === 'p') switchPage('ports');
     if (e.key === 'Tab') {
       e.preventDefault();
-      page = activePage === 'ports' ? 'gpu' : 'ports';
-      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-      document.querySelector('.tab[data-page="' + page + '"]').classList.add('active');
-      activePage = page;
-      document.getElementById('page-' + activePage).classList.add('active');
-      search.placeholder = activePage === 'ports' ? 'Filter ports, processes...' : 'Filter GPUs, processes...';
-      renderActive();
+      switchPage(PAGES[(PAGES.indexOf(activePage) + 1) % PAGES.length]);
     }
     if (e.key === '/') { e.preventDefault(); search.focus(); }
     if (e.key === 'Escape') search.blur();
@@ -400,6 +624,10 @@
           gpuData = msg.data;
           pushGPUHistory();
           if (activePage === 'gpu') renderGPU();
+        } else if (msg.type === 'sys') {
+          sysData = msg.data;
+          pushSysHistory();
+          if (activePage === 'sys') renderSys();
         }
       } catch(err) {
         console.error('parse error:', err);
@@ -418,7 +646,8 @@
 
   function renderActive() {
     if (activePage === 'ports') renderPorts();
-    else renderGPU();
+    else if (activePage === 'gpu') renderGPU();
+    else renderSys();
   }
 
   function renderPorts() {
@@ -475,6 +704,201 @@
     tbody.innerHTML = html;
   }
 
+  // ---- System (CPU + MEM) ----
+  var cpuTotalHistory = [];
+  var memPctHistory = [];
+
+  function pushSysHistory() {
+    if (!sysData) return;
+    cpuTotalHistory.push(sysData.cpu_total || 0);
+    memPctHistory.push(sysData.mem ? (sysData.mem.used_pct || 0) : 0);
+    if (cpuTotalHistory.length > HISTORY_LEN) cpuTotalHistory.shift();
+    if (memPctHistory.length > HISTORY_LEN) memPctHistory.shift();
+  }
+
+  // green -> yellow -> red (same gradient family as memColor)
+  function cpuColor(v) {
+    if (v <= 50) return lerpColor(63,185,80, 210,153,34, v / 50);
+    return lerpColor(210,153,34, 248,81,73, (v - 50) / 50);
+  }
+
+  function drawHistoryChart(canvas, data, colorFn) {
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var w = rect.width, h = rect.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = cssVar('--border');
+    ctx.lineWidth = 0.5;
+    for (var pct = 25; pct <= 75; pct += 25) {
+      var y = h - (pct / 100) * h;
+      ctx.beginPath(); ctx.moveTo(35, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    // Y-axis labels
+    ctx.fillStyle = cssVar('--text-dim');
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('100%', 30, 10);
+    ctx.fillText('50%', 26, h / 2 + 3);
+    ctx.fillText('0%', 20, h - 2);
+
+    if (!data || data.length < 2) return;
+    var padL = 35, plotW = w - padL;
+    var step = plotW / (HISTORY_LEN - 1);
+    var off = HISTORY_LEN - data.length;
+    ctx.lineWidth = 1.5;
+    for (var j = 1; j < data.length; j++) {
+      var x0 = padL + (off + j - 1) * step;
+      var y0 = h - (data[j-1] / 100) * h;
+      var x1 = padL + (off + j) * step;
+      var y1 = h - (data[j] / 100) * h;
+      ctx.strokeStyle = colorFn((data[j-1] + data[j]) / 2);
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    }
+  }
+
+  function fmtMB(mb) {
+    if (mb >= 1024) return (mb / 1024).toFixed(1) + ' GB';
+    return mb + ' MB';
+  }
+
+  // Core utilization histogram: x = util bucket, y = number of cores. Bucket
+  // count adapts to the container width (~7px per bar, clamped 10–50).
+  function renderCores(cores) {
+    var wrap = document.getElementById('cpuCoresWrap');
+    var count = document.getElementById('coreCount');
+    if (!cores || cores.length === 0) {
+      wrap.style.display = 'none';
+      count.textContent = '';
+      return;
+    }
+    wrap.style.display = 'block';
+    count.textContent = '(' + cores.length + ' cores)';
+
+    var el = document.getElementById('cpuBars');
+    var width = el.clientWidth || 600;
+    var n = Math.max(10, Math.min(50, Math.floor(width / 7)));
+    var counts = new Array(n).fill(0);
+    for (var i = 0; i < cores.length; i++) {
+      var b = Math.min(n - 1, Math.floor(cores[i] / 100 * n));
+      counts[b]++;
+    }
+    // Fixed y-axis: total core count, so bar height = fraction of all cores
+    // and the scale doesn't jump between frames.
+    var total = cores.length;
+    document.getElementById('histMax').textContent = total;
+
+    if (el.childElementCount !== n) {
+      var html = '';
+      for (var c = 0; c < n; c++) {
+        html += '<div class="hist-col"><span class="cnt"></span><span class="bar"></span></div>';
+      }
+      el.innerHTML = html;
+    }
+    var step = 100 / n;
+    for (var j = 0; j < n; j++) {
+      var col = el.children[j];
+      var pct = counts[j] / total * 100;
+      if (counts[j] > 0) pct = Math.max(pct, 2); // keep small buckets visible
+      var bar = col.querySelector('.bar');
+      bar.style.height = pct + '%';
+      bar.style.background = counts[j] ? cpuColor((j + 0.5) * step) : 'var(--border)';
+      // Number only on non-zero buckets — no rows of zeros.
+      col.querySelector('.cnt').textContent = counts[j] || '';
+    }
+  }
+
+  function renderSys() {
+    if (!sysData) return;
+    var s = sysData;
+    var cpu = Math.round(s.cpu_total || 0);
+    var mem = s.mem || {};
+    var memPct = Math.round(mem.used_pct || 0);
+
+    // CPU card
+    document.getElementById('cpuBig').textContent = cpu + '%';
+    document.getElementById('cpuBig').style.color = cpuColor(cpu);
+    document.getElementById('cpuBreak').textContent =
+      'user ' + Math.round(s.user||0) + '% · sys ' + Math.round(s.system||0) + '%';
+    drawHistoryChart(document.getElementById('cpuChart'), cpuTotalHistory, cpuColor);
+
+    // Split bar (user/system/iowait/idle)
+    var u = s.user||0, sy = s.system||0, io = s.iowait||0;
+    var idle = Math.max(0, 100 - u - sy - io);
+    document.getElementById('cpuSplit').innerHTML =
+      '<span style="width:' + u  + '%;background:var(--accent)"></span>' +
+      '<span style="width:' + sy + '%;background:var(--orange)"></span>' +
+      '<span style="width:' + io + '%;background:var(--yellow)"></span>' +
+      '<span style="width:' + idle + '%;background:var(--border)"></span>';
+    document.getElementById('lgUser').textContent = Math.round(u) + '%';
+    document.getElementById('lgSys').textContent = Math.round(sy) + '%';
+    document.getElementById('lgIO').textContent = Math.round(io) + '%';
+    document.getElementById('lgIdle').textContent = Math.round(idle) + '%';
+
+    // MEM card
+    document.getElementById('memBig').textContent = memPct + '%';
+    document.getElementById('memBig').style.color = memColor(memPct);
+    document.getElementById('memDetail').textContent =
+      fmtMB(mem.used_mb||0) + ' used · ' + fmtMB(mem.available_mb||0) + ' avail';
+    drawHistoryChart(document.getElementById('memChart'), memPctHistory, memColor);
+    document.getElementById('memBar').innerHTML =
+      '<span style="width:' + memPct + '%;background:' + memColor(memPct) + '"></span>' +
+      '<span style="width:' + (100 - memPct) + '%;background:var(--border)"></span>';
+    document.getElementById('lgMemUsed').textContent = fmtMB(mem.used_mb||0);
+    document.getElementById('lgMemAvail').textContent = fmtMB(mem.available_mb||0);
+    document.getElementById('lgMemSwatch').style.background = memColor(memPct);
+
+    // Per-core utilization histogram
+    renderCores(s.cores || []);
+
+    // Top processes (sortable by cpu/mem, honoring search filter)
+    var section = document.getElementById('sysProcsSection');
+    var body = document.getElementById('sysProcsBody');
+    var procs = (s.procs || []).slice();
+    var filter = search.value.toLowerCase();
+    if (filter) {
+      procs = procs.filter(function(p) {
+        return String(p.pid).indexOf(filter) !== -1 ||
+               (p.user || '').toLowerCase().indexOf(filter) !== -1 ||
+               (p.command || '').toLowerCase().indexOf(filter) !== -1;
+      });
+    }
+    procs.sort(function(a, b) { return (b[procSortKey]||0) - (a[procSortKey]||0); });
+    if (procs.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    var phtml = '';
+    for (var m = 0; m < procs.length; m++) {
+      var p = procs[m];
+      phtml += '<tr>' +
+        '<td>' + p.pid + '</td>' +
+        '<td>' + esc(p.user || '—') + '</td>' +
+        '<td title="' + esc(p.command) + '">' + esc(p.command || '—') + '</td>' +
+        '<td>' + (p.cpu||0).toFixed(1) + '</td>' +
+        '<td>' + (p.mem||0).toFixed(1) + '</td>' +
+        '</tr>';
+    }
+    body.innerHTML = phtml;
+  }
+
+  // Process table sorting (CPU% / Mem% headers)
+  document.querySelectorAll('#sysProcsTable thead th[data-sortk]').forEach(function(th) {
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', function() {
+      procSortKey = th.dataset.sortk;
+      document.querySelectorAll('#sysProcsTable thead th').forEach(function(t) { t.classList.remove('sorted'); });
+      th.classList.add('sorted');
+      renderSys();
+    });
+  });
+
   // GPU chart state
   var HISTORY_LEN = 120;
   var utilHistory = {};
@@ -520,7 +944,7 @@
     ctx.clearRect(0, 0, w, h);
 
     // Grid
-    ctx.strokeStyle = '#30363d';
+    ctx.strokeStyle = cssVar('--border');
     ctx.lineWidth = 0.5;
     for (var pct = 25; pct <= 75; pct += 25) {
       var y = h - (pct / 100) * h;
@@ -528,7 +952,7 @@
     }
 
     // Y-axis
-    ctx.fillStyle = '#8b949e';
+    ctx.fillStyle = cssVar('--text-dim');
     ctx.font = '10px -apple-system, sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText('100%', 30, 10);
