@@ -11,7 +11,7 @@ class Webtop < Formula
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/vcdim/webtop/releases/download/v0.0.2/webtop_0.0.2_darwin_amd64.tar.gz"
-      sha256 "46bec1cfad858e9d23957486353e5a00f3093f7ca8587e76841c03dcca7c9c35"
+      sha256 "c7d0b04e8682221ecfa0a7cde2a7a2708fb3f5bddf4d2ff6eaed9af712dcd067"
 
       define_method(:install) do
         bin.install "webtop"
@@ -19,7 +19,7 @@ class Webtop < Formula
     end
     if Hardware::CPU.arm?
       url "https://github.com/vcdim/webtop/releases/download/v0.0.2/webtop_0.0.2_darwin_arm64.tar.gz"
-      sha256 "6a77772f46d5223c3caa877d735e66df2d7e695887c600d9ed82876f0f69e5bc"
+      sha256 "16578012c6991f3d52043979473d3af7f3ac5ced0e751cf5b9416a0a061f7132"
 
       define_method(:install) do
         bin.install "webtop"
@@ -30,14 +30,14 @@ class Webtop < Formula
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
       url "https://github.com/vcdim/webtop/releases/download/v0.0.2/webtop_0.0.2_linux_amd64.tar.gz"
-      sha256 "5105f55a9ac65da05d7ce0fe1b5920cdc56683c6c358777f3366c9ee2ee7c5c3"
+      sha256 "85fb13f92c07b3418ad150801151235dde54c7fded21d59186539bb4aa10c0a8"
       define_method(:install) do
         bin.install "webtop"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
       url "https://github.com/vcdim/webtop/releases/download/v0.0.2/webtop_0.0.2_linux_arm64.tar.gz"
-      sha256 "52a1ba6407fd86b52faa12eb508d9a0b76cc18100c4db8e7d41f41df885f1d08"
+      sha256 "faf1b80147f0bb5160a8e91c323ce4f55ac4687738d79d84ca71430d0f955c24"
       define_method(:install) do
         bin.install "webtop"
       end
