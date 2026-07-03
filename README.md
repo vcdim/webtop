@@ -1,7 +1,8 @@
 # webtop
 
-Lightweight, single-binary web-based system dashboard. Real-time port monitoring and GPU status in your browser.
+Lightweight, single-binary web-based system dashboard. Real-time CPU, memory, port, and GPU monitoring in your browser.
 
+![system](assets/system.png)
 ![ports](assets/ports.png)
 ![gpu](assets/gpu.png)
 
